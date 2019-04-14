@@ -20,7 +20,7 @@
         <form>
           <div class="input--username">
             <input type="text" class="username" placeholder="Type location or license plate">
-            <img src="/icons/Crosshairs.svg">
+            <router-link to="/mobile/search/shell"><img src="/icons/Crosshairs.svg"></router-link>
           </div>
           <div class="input--submit">
             <router-link type="button" to="/mobile/search/shell">Search</router-link>

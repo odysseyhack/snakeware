@@ -99,13 +99,15 @@
       async registerTransport() {
         var json = {
           holderId: 2,
-          materialId: 184,
+          materialId: 18,
           amount: Math.floor(Math.random() * (+10 - +1)) + +10,
           storageStartId: 3,
           storageDestinationId: 1
         }
         this.$mqtt.publish("/registerTransport", JSON.stringify(json));
-        this.getData()
+
+        this.getData();
+
       },
       async receiveTransport() {
         var json = {
@@ -115,8 +117,12 @@
           storageDestinationId: parseInt(this.companyId),
           transportId: this.transportRecords[0].transportId
         }
+
+        console.log(json);
         this.$mqtt.publish("/receiveTransport", JSON.stringify(json));
+
         this.getData();
+
         //Transport ontvangen HOLDERID, MATERIALID, AMMOUNT, STORAGESTARTID, STORAGEDESTINATIONID RECEIVETRANSPORT,
       },
       async getData() {
@@ -124,9 +130,48 @@
         let transportUrl = '/listTransports';
         let materialsUrl = '/listMaterials';
         let data = { holderId: 2, storageId: parseInt(this.companyId)};
-        this.storageRecords = await RequestHandler.requestHandler(storageUrl, 'post', data);
+        let storageRecords = await RequestHandler.requestHandler(storageUrl, 'post', data);
         this.transportRecords = await RequestHandler.requestHandler(transportUrl, 'post', data);
         this.materials = await RequestHandler.requestHandler(materialsUrl, 'post', data);
+
+
+        let recordsLib = {};
+
+        storageRecords.forEach((record) => {
+
+          if(Object.keys(recordsLib).indexOf(record.materialId) === -1){
+
+            recordsLib[record.materialId] = {};
+            recordsLib[record.materialId].amount = record.amount;
+
+
+          }else{
+
+            recordsLib[record.materialId].amount = recordsLib[record.materialId].amount + record.amount;
+
+          }
+
+        });
+
+        this.storageRecords = [];
+
+        Object.keys(recordsLib).forEach((lib) => {
+
+          let record = {
+
+            amount: 0,
+            materialId: parseInt(lib)
+          };
+
+          record.amount = recordsLib[lib].amount;
+
+          console.log(record);
+
+          this.storageRecords.push(record);
+
+        });
+
+
         this.getMarkers()
         this.showMap = true;
       },
@@ -191,7 +236,15 @@
       display: flex;
       justify-content: space-between;
       button {
-        height: 10px;
+        height: 36px;
+        padding: 0 15px;
+        background: #0171ea;
+        color: #fff;
+        font-family: inherit;
+        border: 0;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 1.2rem;
       }
     }
     &__entity-overview {

@@ -18,7 +18,7 @@
     </div>
 
     <div class="dashboard-map" v-bind:class="{ active: toggle === true }">
-      <Map class="dashboard-map__map" :callback="openOverlay" :zoom="12" :markers="markers"></Map>
+      <Map class="dashboard-map__map" :callback="openOverlay" :zoom="13" :markers="markers"></Map>
       <div class="dashboard-map__overlay" v-if="activeMarker">
         <div v-html="activeMarker.description"></div>
         <div class="input--submit">
@@ -45,7 +45,39 @@
         </div>
       </div>
       <div class="advise" v-show="!loader" v-bind:class="{ active: advise === true }">
+        <h1>Advice</h1>
+        <div class="card">
+          <img src="/blusser1.png">
+          <div class="data">
+            <h2>BRB 300-07 Poederblusser</h2>
+            <ul>
+              <li>Negatief katalytische werking</li>
+              <li>Smelt bij verhitting samen tot dunne gesloten laag</li>
+              <li>Spuit op vaste stof: vlamdovend</li>
+              <li>Spuit op gloeiend materiaal: dunne zoutkorst die zuurstof afsluit</li>
+              <li>Is tevens toepasbaar bij elektriciteitsbranden</li>
+            </ul>
+          </div>
 
+        </div>
+        <div class="card">
+          <img src="/blusser2.png">
+          <div class="data">
+            <h2>Schuimvormende armaturen (Hosemaster) BRB 300-04</h2>
+            <ul>
+              <li>Alcoholbestendig</li>
+              <li>Zowel bij polaire stoffen (mengbaar met water) alsa-polaire stoffen (niet mengbaar met water) te gebruiken</li>
+              <li>Te gebruiken tot -14 oC</li>
+            </ul>
+          </div>
+        </div>
+        <div class="feedback">
+          <h3>Was this helpful?</h3>
+          <img src="/icons/angry1.svg">
+          <img src="/icons/angry2.svg">
+          <img src="/icons/angry3.svg">
+          <img src="/icons/angry4.svg">
+        </div>
       </div>
       <div v-show="!loader">
         <ul>
@@ -129,14 +161,16 @@
         this.newLocation = true;
       },
       toggleAdvise() {
-        this.advise === !this.advise;
+        this.advise = !this.advise;
       },
       toggleTab(type) {
         console.log(type);
+        this.advise = false;
         this.toggle = type;
         if(this.toggle === false) {
+
           const self = this;
-          setTimeout(function(e){ self.loader = false; self.newLocation = false; }, 1000);
+          setTimeout(function(e){ self.loader = false; self.newLocation = false; }, 2000);
           if(this.newLocation === true) {
             this.loader = true;
           }
@@ -146,18 +180,63 @@
   }
 </script>
 <style lang="scss">
+  .feedback {
+    margin: 40px 0 0 0;
+    h3 {
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+  }
   .advise {
+    background-color: #f4f4f4;
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
+    overflow: auto;
     transition: 0.2s ease-in-out all;
     padding: 38px;
-    background: red;
     transform: translateY(100%);
     &.active {
       transform: translateY(0);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin: 0 0 10px 0;
+    }
+    .card {
+      margin: 0 0 15px 0;
+      box-shadow: 0 10px 20px 0 rgba(30,30,30,0.06);
+      background-color: #fff;
+      overflow: auto;
+      .data {
+        padding: 20px 20px;
+        float: left;
+        width: 100%;
+        background-color: #fff;
+      }
+      h2 {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 0;
+        margin: 0 0 5px 0;
+      }
+      ul {
+        li {
+          margin-left: 1rem;
+          padding: 3px 0;
+        }
+        font-size: 1.2rem;
+        list-style-type: inside;
+      }
+      img {
+        float: left;
+        width: 100%;
+
+      }
     }
   }
   .dashboard {

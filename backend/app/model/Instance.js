@@ -212,7 +212,7 @@ class Instance {
                 holderId: parseInt(holderId),
                 materialId: parseInt(materialId),
                 amount: parseInt(amount),
-                storageId: storageDestinationId,
+                storageId: parseInt(storageDestinationId),
                 active: true,
                 timestamp: new Date().getTime()
 
@@ -222,6 +222,8 @@ class Instance {
 
             let updateTransport = await db.filterUpdate(this.name,"transports", {transportId: transportId},{active: false});
 
+            console.log("storage++++++++++++++++++++++++++++++++++++");
+            console.log(storage);
             if(result.inserted === 1 && updateTransport.updated === 1) {
 
                 resolve({
