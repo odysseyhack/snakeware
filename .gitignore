@@ -1,0 +1,10 @@
+backend/.env
+backend/dev.sh
+backend/docker-compose.yaml
+backend/Dockerfile
+backend/stopdev.sh
+frontend/.env
+frontend/dev.sh
+frontend/docker-compose.yaml
+frontend/Dockerfile
+frontend/stopdev.sh
