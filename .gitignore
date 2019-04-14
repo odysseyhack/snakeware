@@ -8,3 +8,4 @@ frontend/dev.sh
 frontend/docker-compose.yaml
 frontend/Dockerfile
 frontend/stopdev.sh
+backend/app/model/Instance.js
