@@ -1,1 +1,257 @@
-"use strict";const axios=require("axios"),mqtt=require("mqtt");let mqttClient=mqtt.connect("ws://mqtt:"+process.env.mqttPort);const dataBase=require("../exports/dataBase"),db=new dataBase,admin=require("../exports/administrator");class Instance{constructor(){this.name="backend_processor",this.time=new Date,this.version="1",this.endpoints=[],this.tableArray=[{name:"transports",options:{primary_key:"transportId"}},{name:"incidents",options:{}},{name:"materials",options:{}},{name:"storages"}],this.prefix="/backend",this.internalAddress="http://backend:3000",this.start()}start(){console.log("Microservice Started"),mqttClient.subscribe("/registerTransport"),mqttClient.subscribe("/receiveTransport"),mqttClient.on("message",(t,e)=>{let s=JSON.parse(e);console.log(s),"/registerTransport"===t&&this.registerTransport(s),"/receiveTransport"===t&&this.receiveTransport(s)})}listStorages(t,e){return new Promise(async(s,r)=>{r(await db.selectFilter(this.name,"storages",{holderId:parseInt(t),storageId:e,active:!0}))})}listTransports(t,e){return new Promise(async(s,r)=>{r(await db.selectFilter(this.name,"transports",{holderId:parseInt(t),storageDestinationId:e,active:!0}))})}listMaterials(){return new Promise(async(t,e)=>{e(await db.selectAll(this.name,"materials"))})}registerIncident(t,e,s,r,a,n){return new Promise(async(i,o)=>{let d={incidentId:parseInt(t),responseTime:e,longitude:s,latitude:r,materialId:parseInt(a),risklevel:parseInt(n),timestamp:(new Date).getTime()},m=await db.insert(this.name,"incidents",d);1===m.inserted?o({message:"Incident stored in database",incident:d,result:m}):i({message:"Incident not stored something went wrong",incident:d,error:m})})}registerTransport({holderId:t,materialId:e,amount:s,storageStartId:r,storageDestinationId:a}){return new Promise(async(n,i)=>{let o=await db.selectMax(this.name,"transports","transportId");console.log(o),o=0===o?1:o.transportId+1;let d={holderId:parseInt(t),materialId:parseInt(e),amount:parseInt(s),storageStartId:r,storageDestinationId:a,transportId:o,active:!0,timestamp:(new Date).getTime()},m={holderId:parseInt(t),materialId:parseInt(e),amount:0-parseInt(s),storageId:r,active:!0,timestamp:(new Date).getTime()},p=(await db.insert(this.name,"storages",m),await db.insert(this.name,"transports",d));1===p.inserted?i({message:"Transport stored in database",incident:d,result:p}):n({message:"Transport not stored something went wrong",incident:d,error:p})})}receiveTransport({holderId:t,materialId:e,amount:s,storageDestinationId:r,transportId:a}){return new Promise(async(n,i)=>{let o={holderId:parseInt(t),materialId:parseInt(e),amount:parseInt(s),storageId:parseInt(r),active:!0,timestamp:(new Date).getTime()},d=await db.insert(this.name,"storages",o),m=await db.filterUpdate(this.name,"transports",{transportId:a},{active:!1});console.log("storage++++++++++++++++++++++++++++++++++++"),console.log(o),1===d.inserted&&1===m.updated?i({message:"Transport reception stored in database",incident:o,result:d}):n({message:"Transport reception not stored something went wrong",incident:o,error:d})})}}module.exports=Instance;
+'use strict';
+
+const axios = require('axios');
+
+const mqtt = require('mqtt');
+let mqttClient = mqtt.connect('ws://mqtt:' + process.env.mqttPort);
+
+const dataBase = require('../exports/dataBase');
+const db = new dataBase();
+const admin = require('../exports/administrator');
+
+class Instance {
+
+    constructor() {
+
+        this.name = "backend_processor";
+        this.time = new Date();
+        this.version = "1";
+        this.endpoints = [];
+        this.tableArray = [{name: "transports", options: {primary_key: "transportId"}},{name: "incidents", options:{}},{name: "materials", options:{}},{name: "storages"}];
+        this.prefix = "/backend";
+        this.internalAddress = "http://backend:3000";
+        this.start();
+
+    }
+
+    start(){
+
+        console.log("Microservice Started");
+
+        mqttClient.subscribe("/registerTransport");
+        mqttClient.subscribe("/receiveTransport");
+
+        mqttClient.on("message", (topic,message) => {
+
+            let mqttMessage = JSON.parse(message);
+
+            console.log(mqttMessage);
+
+            if(topic === "/registerTransport"){
+
+                this.registerTransport(mqttMessage)
+
+            }
+
+            if(topic === "/receiveTransport"){
+
+                this.receiveTransport(mqttMessage);
+
+            }
+
+        });
+
+    }
+
+    listStorages(holderId,storageId){
+
+        return new Promise(async (reject, resolve) => {
+
+            let records = await db.selectFilter(this.name, "storages", { holderId: parseInt(holderId), storageId: storageId, active: true});
+
+            resolve(records);
+
+        });
+    }
+
+    listTransports(holderId,storageId){
+
+        return new Promise(async (reject, resolve) => {
+
+            let records = await db.selectFilter(this.name, "transports", { holderId: parseInt(holderId), storageDestinationId: storageId, active: true});
+
+            resolve(records);
+
+        });
+
+    }
+
+    listMaterials(){
+
+        return new Promise(async (reject, resolve) => {
+
+            let records = await db.selectAll(this.name, "materials");
+
+            resolve(records);
+
+        });
+
+    }
+
+
+    registerIncident(incidentId,responseTime,longitude,latitude,materialId,risklevel){
+
+        return new Promise(async (reject, resolve) => {
+
+            let incident = {
+
+                incidentId: parseInt(incidentId),
+                responseTime: responseTime,
+                longitude: longitude,
+                latitude: latitude,
+                materialId: parseInt(materialId),
+                risklevel: parseInt(risklevel),
+                timestamp: new Date().getTime()
+
+            };
+
+            let result = await db.insert(this.name,"incidents", incident);
+
+            if (result.inserted === 1) {
+
+                resolve({
+
+                    message: "Incident stored in database",
+                    incident: incident,
+                    result: result
+
+                });
+
+            } else {
+
+                reject({
+
+                    message: "Incident not stored something went wrong",
+                    incident: incident,
+                    error: result
+
+                });
+            }
+
+        });
+
+    }
+
+    registerTransport({holderId,materialId,amount,storageStartId,storageDestinationId}){
+
+        return new Promise(async (reject, resolve) => {
+
+            let transportId = await db.selectMax(this.name,"transports","transportId");
+
+            console.log(transportId);
+
+            if(transportId === 0){
+
+                transportId = 1;
+
+            }else{
+
+                transportId = transportId.transportId + 1;
+
+            }
+
+            let transport = {
+
+                holderId: parseInt(holderId),
+                materialId: parseInt(materialId),
+                amount: parseInt(amount),
+                storageStartId: storageStartId,
+                storageDestinationId: storageDestinationId,
+                transportId: transportId,
+                active: true,
+                timestamp: new Date().getTime()
+
+            };
+
+            let storage = {
+
+                holderId: parseInt(holderId),
+                materialId: parseInt(materialId),
+                amount: 0 - parseInt(amount),
+                storageId: storageStartId,
+                active: true,
+                timestamp: new Date().getTime()
+
+            };
+
+            let updateStorage = await db.insert(this.name,"storages", storage);
+
+            let result = await db.insert(this.name, "transports", transport);
+
+            if (result.inserted === 1) {
+
+                resolve({
+
+                    message: "Transport stored in database",
+                    incident: transport,
+                    result: result
+
+                });
+
+            } else {
+
+                reject({
+
+                    message: "Transport not stored something went wrong",
+                    incident: transport,
+                    error: result
+
+                });
+            }
+
+        });
+
+    }
+
+    receiveTransport({holderId,materialId,amount,storageDestinationId,transportId}){
+
+        return new Promise(async (reject, resolve) => {
+
+            let storage = {
+
+                holderId: parseInt(holderId),
+                materialId: parseInt(materialId),
+                amount: parseInt(amount),
+                storageId: parseInt(storageDestinationId),
+                active: true,
+                timestamp: new Date().getTime()
+
+            };
+
+            let result = await db.insert(this.name, "storages", storage);
+
+            let updateTransport = await db.filterUpdate(this.name,"transports", {transportId: transportId},{active: false});
+
+            console.log("storage++++++++++++++++++++++++++++++++++++");
+            console.log(storage);
+            if(result.inserted === 1 && updateTransport.updated === 1) {
+
+                resolve({
+
+                    message: "Transport reception stored in database",
+                    incident: storage,
+                    result: result
+
+                });
+
+            }else{
+
+                reject({
+
+                    message: "Transport reception not stored something went wrong",
+                    incident: storage,
+                    error: result
+
+                });
+
+            }
+
+        });
+
+    }
+
+
+
+}
+
+module.exports = Instance;
